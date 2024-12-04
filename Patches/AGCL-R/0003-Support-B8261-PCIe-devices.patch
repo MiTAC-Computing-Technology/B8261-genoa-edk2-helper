@@ -1,0 +1,436 @@
+From 066dae53d70a19735012fa9dfae09572d438942d Mon Sep 17 00:00:00 2001
+From: Samba Chi <samba.chi@mitaccomputing.com>
+Date: Tue, 3 Dec 2024 15:07:05 +0800
+Subject: [PATCH] Support B8261 PCIe devices
+
+---
+ .../Oem/B8261/Pei/AmdOemInitB8261Lib.inf      |  25 ++
+ .../Oem/B8261/Pei/MpioDataInitB8261.c         | 383 ++++++++++++++++++
+ 2 files changed, 408 insertions(+)
+ create mode 100644 AgesaPkg/Addendum/Oem/B8261/Pei/AmdOemInitB8261Lib.inf
+ create mode 100644 AgesaPkg/Addendum/Oem/B8261/Pei/MpioDataInitB8261.c
+
+diff --git a/AgesaPkg/Addendum/Oem/B8261/Pei/AmdOemInitB8261Lib.inf b/AgesaPkg/Addendum/Oem/B8261/Pei/AmdOemInitB8261Lib.inf
+new file mode 100644
+index 0000000..63e994d
+--- /dev/null
++++ b/AgesaPkg/Addendum/Oem/B8261/Pei/AmdOemInitB8261Lib.inf
+@@ -0,0 +1,25 @@
++#;*****************************************************************************
++#;
++#; Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
++#;
++#;******************************************************************************
++
++[Defines]
++  INF_VERSION           = 0x00010005
++  BASE_NAME             = AmdOemInitB8261Lib
++  FILE_GUID             = 12E13488-5778-4dAE-A408-A46D395295A1
++  MODULE_TYPE           = BASE
++  VERSION_STRING        = 1.0
++  LIBRARY_CLASS         = AmdOemInitB8261EntryPoint
++
++[Sources]
++  MpioDataInitB8261.c
++
++[Packages]
++  MdePkg/MdePkg.dec
++  MdeModulePkg/MdeModulePkg.dec
++  AgesaPkg/AgesaPublicPkg.dec
++  AmdOpenSilPkg/opensil-uefi-interface/AmdOpenSilPkg.dec
++
++[Depex]
++  TRUE
+diff --git a/AgesaPkg/Addendum/Oem/B8261/Pei/MpioDataInitB8261.c b/AgesaPkg/Addendum/Oem/B8261/Pei/MpioDataInitB8261.c
+new file mode 100644
+index 0000000..e2215f5
+--- /dev/null
++++ b/AgesaPkg/Addendum/Oem/B8261/Pei/MpioDataInitB8261.c
+@@ -0,0 +1,383 @@
++/*
++ * Copyright (C) 2024 MiTAC Computing, Inc. All rights reserved.
++ *
++ */
++/*****************************************************************************
++ *
++ * Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
++ *
++ *******************************************************************************
++ */
++
++#include <PiPei.h>
++#include <Library/BaseMemoryLib.h>
++#include <Sil-api.h>
++#include <Mpio/MpioClass-api.h>
++#include <Mpio/Common/MpioStructs.h>
++
++MPIO_PORT_DESCRIPTOR MpioPortDescriptorB8261[] = {
++  { // P0
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 0, 3, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      1                                     // SlotNum
++    )
++  },
++  { // P0
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 4, 7, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      2                                     // SlotNum
++    )
++  },
++  { // P0
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 8, 11, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      3                                     // SlotNum
++    )
++  },
++  { // P0
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 12, 15, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      4                                     // SlotNum
++    )
++  },
++  { // P5
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 132, 132, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      5                                     // SlotNum
++    )
++  },
++  { // P5
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 134, 134, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      6                                     // SlotNum
++    )
++  },
++  { // P5
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 135, 135, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      7                                     // SlotNum
++    )
++  },
++  { // P1 - CN1
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 32, 47, PcieHotplugBasic, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      8                                     // SlotNum
++    )
++  },
++  { // P2
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 48, 63, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      9                                     // SlotNum
++    )
++  },
++  { // G2
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 112, 127, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      10                                    // SlotNum
++    )
++  },
++  { // P4 - X550
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 128, 131, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      11                                    // SlotNum
++    )
++  },
++  { // P3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 16, 19, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      12                                    // SlotNum
++    )
++  },
++  { // P3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 20, 23, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      13                                    // SlotNum
++    )
++  },
++  { // P3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 24, 27, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      14                                    // SlotNum
++    )
++  },
++  { // P3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 28, 31, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      15                                    // SlotNum
++    )
++  },
++  { // G3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 80, 83, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      16                                    // SlotNum
++    )
++  },
++  { // G3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 84, 87, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      17                                    // SlotNum
++    )
++  },
++  { // G3
++    0,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 88, 91, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      18                                    // SlotNum
++    )
++  },
++  { // G3
++    DESCRIPTOR_TERMINATE_LIST,
++    MPIO_ENGINE_DATA_INITIALIZER (MpioPcieEngine, 92, 95, PcieHotplugDisabled, 1),
++    MPIO_PORT_DATA_INITIALIZER_PCIE (
++      MpioPortEnabled,                      // Port Present
++      0,                                    // Requested Device
++      0,                                    // Requested Function
++      PcieHotplugDisabled,                  // Hotplug
++      PcieGenMaxSupported,                  // Max Link Speed
++      PcieGenMaxSupported,                  // Max Link Capability
++      AspmL1,                               // ASPM
++      AspmDisabled,                         // ASPM L1.1 disabled
++      AspmDisabled,                         // ASPM L1.2 disabled
++      MpioClkPmSupportDisabled,             // Clock PM
++      1,                                    // AlwaysExpose
++      19                                    // SlotNum
++    )
++  }
++};
++
++MPIO_COMPLEX_DESCRIPTOR MpioComplexDescriptorB8261 = {
++  DESCRIPTOR_TERMINATE_LIST,
++  0,
++  MpioPortDescriptorB8261,
++  NULL,
++  0,
++  0,
++  {0,0}
++};
++
++EFI_STATUS
++SetMpioConfig (
++  MPIOCLASS_INPUT_BLK           *MpioData
++  )
++{
++  CopyMem (&MpioData->PcieTopologyData.PlatformData, &MpioComplexDescriptorB8261, sizeof (MPIO_COMPLEX_DESCRIPTOR));
++  MpioData->PcieTopologyData.PlatformData[0].PciePortList = MpioData->PcieTopologyData.PortList;
++  CopyMem (&MpioData->PcieTopologyData.PortList, &MpioPortDescriptorB8261, sizeof (MpioPortDescriptorB8261));
++
++  return EFI_SUCCESS;
++}
+\ No newline at end of file
+-- 
+2.34.1
+

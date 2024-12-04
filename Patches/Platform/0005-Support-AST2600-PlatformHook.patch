@@ -1,0 +1,170 @@
+From 06d7338623d3bd719d83523bbbc171e9f377e6f0 Mon Sep 17 00:00:00 2001
+From: Samba Chi <samba.chi@mitaccomputing.com>
+Date: Tue, 3 Dec 2024 15:44:24 +0800
+Subject: [PATCH 5/5] Support AST2600 PlatformHook
+
+---
+ .../BasePlatformHookLibAST2600.c              | 97 +++++++++++++++++++
+ .../BasePlatformHookLibAST2600.inf            | 46 +++++++++
+ 2 files changed, 143 insertions(+)
+ create mode 100644 MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.c
+ create mode 100644 MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.inf
+
+diff --git a/MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.c b/MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.c
+new file mode 100644
+index 0000000..0737ecb
+--- /dev/null
++++ b/MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.c
+@@ -0,0 +1,97 @@
++/*
++ * Copyright (C) 2024 MiTAC Computing, Inc. All rights reserved.
++ *
++ */
++
++/* This file includes code originally published under the following license. */
++
++/** @file
++  Platform Hook Library instance.
++
++  Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
++
++  This program and the accompanying materials
++  are licensed and made available under the terms and conditions of the BSD License
++  which accompanies this distribution.  The full text of the license may be found at
++  http://opensource.org/licenses/bsd-license.php
++
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++
++**/
++
++#include <Uefi.h>
++#include <Library/BaseLib.h>
++#include <Library/IoLib.h>
++#include <Library/PlatformHookLib.h>
++
++#ifndef SIO_IO_PORT_NUMBER
++  #define SIO_IO_PORT_NUMBER 0x2E
++#endif
++
++#define ASPEED2500_SIO_UART1      0x02
++#define ASPEED2500_SIO_UART2      0x03
++#define REG_LOGICAL_DEVICE        0x07
++#define ACTIVATE                  0x30
++#define BASE_ADDRESS_HIGH0        0x60
++#define BASE_ADDRESS_LOW0         0x61
++#define PRIMARY_INTERRUPT_SELECT  0x70
++#define INTERRUPT_TYPE            0x71
++#define ASPEED2500_SIO_UNLOCK     0xA5
++#define ASPEED2500_SIO_LOCK       0xAA
++#define COM1_BASE                 0x3F8
++#define COM2_BASE                 0x2F8
++
++
++typedef struct {
++  UINT8   Index;
++  UINT8   Data;
++} SIO_REG_TABLE;
++
++STATIC  SIO_REG_TABLE  mASPEED2500Table [] = {
++  { REG_LOGICAL_DEVICE,         ASPEED2500_SIO_UART1  },
++  { ACTIVATE,                   0x01                  },
++  { BASE_ADDRESS_HIGH0,         (COM1_BASE >> 8)      }, // Set Base Address MSB
++  { BASE_ADDRESS_LOW0,          (COM1_BASE & 0x00FF)  }, // Set Base Address LSB
++  { PRIMARY_INTERRUPT_SELECT,   0x04                  }, // COMA IRQ routing
++  { INTERRUPT_TYPE,             0x01                  }, // COMA Interrupt Type
++  { REG_LOGICAL_DEVICE,         ASPEED2500_SIO_UART2  },
++  { ACTIVATE,                   0x01                  },
++  { BASE_ADDRESS_HIGH0,         (COM2_BASE >> 8)      }, // Set Base Address MSB
++  { BASE_ADDRESS_LOW0,          (COM2_BASE & 0x00FF)  }, // Set Base Address LSB
++  { PRIMARY_INTERRUPT_SELECT,   0x03                  }, // COMB IRQ routing
++  { INTERRUPT_TYPE,             0x01                  }  // COMB Interrupt Type
++};
++
++
++/**
++  Performs platform specific initialization required for the CPU to access
++  the hardware associated with a SerialPortLib instance.  This function does
++  not intialize the serial port hardware itself.  Instead, it initializes
++  hardware devices that are required for the CPU to access the serial port
++  hardware.  This function may be called more than once.
++
++  @retval RETURN_SUCCESS       The platform specific initialization succeeded.
++  @retval RETURN_DEVICE_ERROR  The platform specific initialization could not be completed.
++
++**/
++RETURN_STATUS
++EFIAPI
++PlatformHookSerialPortInitialize (
++  VOID
++  )
++{
++  UINT8                               Index;
++
++  IoWrite8 (SIO_IO_PORT_NUMBER, ASPEED2500_SIO_UNLOCK);                  // Send 0xA5 twice to enter configuration mode
++  IoWrite8 (SIO_IO_PORT_NUMBER, ASPEED2500_SIO_UNLOCK);                  //
++
++  for (Index = 0; Index < sizeof (mASPEED2500Table)/sizeof (SIO_REG_TABLE); Index++) {
++    IoWrite8 (SIO_IO_PORT_NUMBER, mASPEED2500Table[Index].Index);
++    IoWrite8 (SIO_IO_PORT_NUMBER+1, mASPEED2500Table[Index].Data);
++  }
++
++  IoWrite8 (SIO_IO_PORT_NUMBER, ASPEED2500_SIO_LOCK);                  // Exit configuration mode
++
++  return RETURN_SUCCESS;
++}
+diff --git a/MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.inf b/MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.inf
+new file mode 100644
+index 0000000..f33945a
+--- /dev/null
++++ b/MiTACCommonPkg/Library/PlatformHookLib/BasePlatformHookLibAST2600/BasePlatformHookLibAST2600.inf
+@@ -0,0 +1,46 @@
++#;*****************************************************************************
++#; Copyright (C) 2017-2022 Advanced Micro Devices, Inc. All rights reserved.
++#;
++#;******************************************************************************
++#
++# This file includes code originally published under the following license.
++#
++## @file
++#  Platform Hook Library instance.
++#
++#  Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
++#
++#  This program and the accompanying materials
++#  are licensed and made available under the terms and conditions of the BSD License
++#  which accompanies this distribution. The full text of the license may be found at
++#  http://opensource.org/licenses/bsd-license.php
++#
++#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++#
++##
++
++[Defines]
++  INF_VERSION                    = 0x00010005
++  BASE_NAME                      = BasePlatformHookLibAST2600
++  FILE_GUID                      = 33417fce-e0fe-486f-923e-a6b5e917a129
++  MODULE_TYPE                    = BASE
++  VERSION_STRING                 = 1.0
++  LIBRARY_CLASS                  = PlatformHookLib
++
++[Sources]
++  BasePlatformHookLibAST2600.c
++
++[Packages]
++  MdePkg/MdePkg.dec
++  MdeModulePkg/MdeModulePkg.dec
++[LibraryClasses]
++  BaseLib
++  PcdLib
++  IoLib
++  PciSegmentLib
++[FixedPcd]
++  gEfiMdeModulePkgTokenSpaceGuid.PcdSerialRegisterBase
++  gEfiMdeModulePkgTokenSpaceGuid.PcdSerialUseMmio
++  gEfiMdeModulePkgTokenSpaceGuid.PcdSerialClockRate
++  gEfiMdeModulePkgTokenSpaceGuid.PcdSerialBaudRate
+-- 
+2.34.1
+

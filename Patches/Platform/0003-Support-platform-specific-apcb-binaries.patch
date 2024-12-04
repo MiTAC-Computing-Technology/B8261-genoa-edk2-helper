@@ -1,0 +1,88 @@
+From 2cac90ae886f77f58ad9c2b183cb3a29c904c0d6 Mon Sep 17 00:00:00 2001
+From: Samba Chi <samba.chi@mitaccomputing.com>
+Date: Fri, 1 Nov 2024 15:25:01 +0800
+Subject: [PATCH 3/5] Support platform specific apcb binaries
+
+---
+ PlatformTools/support/pspdirectory.py | 65 +++++++++++++++------------
+ 1 file changed, 37 insertions(+), 28 deletions(-)
+
+diff --git a/PlatformTools/support/pspdirectory.py b/PlatformTools/support/pspdirectory.py
+index 1e9623c..5d1b638 100644
+--- a/PlatformTools/support/pspdirectory.py
++++ b/PlatformTools/support/pspdirectory.py
+@@ -56,34 +56,43 @@ def insert_psp_directory():
+             'NewPspKit/PspDirectoryTool',
+             'BuildPspDirectory.py'
+             )
+-
+-    bios_image = os.path.join(build_output, 'FV/PLATFORM.fd')
+-    output_image = '{}.FD'.format(firmware_version)
+-    psp_output = os.path.join(workspace, '')
+-
+-    # Paths of files to copy
+-    firmware_dir = os.path.join(
+-        workspace,
+-        'AGCL-R/AgesaModulePkg/Firmwares',
+-        soc_sku
+-        )
+-    bios_image_xml = os.path.join(
+-        platform_dir,
+-        'PspData{}.xml'.format(soc_sku.lower().capitalize())
+-    )
+-    platform_binaries = os.path.join(
+-        platform_common_dir,
+-        'Binaries'
+-    )
+-
+-    # Copy required files
+-    copy_dirs = (firmware_dir, custom_apcb_path, platform_binaries)
+-    print('psp_workspace: {}'.format(psp_workspace))
+-    for copy_dir in copy_dirs:
+-        for root, dirs, files in os.walk(copy_dir):
+-            for file in files:
+-                src = os.path.join(root, file)
+-                dst = os.path.join(psp_workspace, src[len(copy_dir) + 1:])
++
++    bios_image = os.path.join(build_output, 'FV/PLATFORM.fd')
++    output_image = '{}.FD'.format(firmware_version)
++    psp_output = os.path.join(workspace, '')
++
++    # Paths of files to copy
++    agesa_firmware_dir = os.path.join(
++        workspace,
++        'AGCL-R/AgesaModulePkg/Firmwares',
++        soc_sku
++        )
++    firmware_dir = os.path.join(
++        workspace,
++        'amd_firmwares/Firmwares',
++        soc_sku
++        )
++    bios_image_xml = os.path.join(
++        platform_dir,
++        'PspData{}.xml'.format(soc_sku.lower().capitalize())
++    )
++    platform_common_binaries = os.path.join(
++        platform_common_dir,
++        'Binaries'
++    )
++    platform_binaries = os.path.join(
++        platform_dir,
++        'Binaries'
++    )
++
++    # Copy required files
++    copy_dirs = (agesa_firmware_dir, firmware_dir, custom_apcb_path, platform_common_binaries, platform_binaries)
++    print('psp_workspace: {}'.format(psp_workspace))
++    for copy_dir in copy_dirs:
++        for root, dirs, files in os.walk(copy_dir):
++            for file in files:
++                src = os.path.join(root, file)
++                dst = os.path.join(psp_workspace, src[len(copy_dir) + 1:])
+                 os.makedirs(os.path.dirname(dst), exist_ok=True)
+                 shutil.copy(src, dst)
+     sys.stdout.flush()
+-- 
+2.34.1
+
