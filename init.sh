@@ -10,13 +10,12 @@ EDK2_DIR=edk2
 EDK2_PLATFORMS_DIR=edk2-platforms
 CRB_PKG_DIR=CrbSupportPkg
 
-REPO_URL=git@micgitlab1-ssh.mic.com.tw:1022/beoc/community/amd
+REPO_URL=git@github.com:MiTAC-Computing-Technology
 GENOA_BRANCH=genoa_poc
 EDK2_BRANCH=edk2-stable202205
 EDK2_PLATFORMS_TAG=b8ffb76b471dae5e24badcd9e04033e8c9439ce3
 
 echo "=== Setup Start ==="
-
 mkdir -p $WORK_DIR/$OPENSIL_PKG_DIR
 cd $WORK_DIR/$OPENSIL_PKG_DIR
 
@@ -24,19 +23,19 @@ cd $WORK_DIR/$OPENSIL_PKG_DIR
 # Clone Source Code
 #
 echo "Clone OpenSIL:"
-git clone ssh://$REPO_URL/opensil-uefi-interface.git -b $GENOA_BRANCH $OPENSIL_INTERFACE_DIR
+git clone $REPO_URL/opensil-uefi-interface.git -b $GENOA_BRANCH $OPENSIL_INTERFACE_DIR
 cd $OPENSIL_INTERFACE_DIR
-git clone ssh://$REPO_URL/opensil.git -b $GENOA_BRANCH $OPENSIL_DIR
+git clone $REPO_URL/AMD-openSIL.git -b $GENOA_BRANCH $OPENSIL_DIR
 
 cd $WORK_DIR
 echo "Clone AgesaModule:"
-git clone ssh://$REPO_URL/agcl-r.git -b $GENOA_BRANCH $AGESA_DIR
+git clone $REPO_URL/AGCL-R.git -b $GENOA_BRANCH $AGESA_DIR
 
 echo "Clone AMD platforms:"
-git clone ssh://$REPO_URL/edkii-platform.git -b $GENOA_BRANCH $AMD_PLATFORM_DIR
+git clone $REPO_URL/EDKII-Platform-AMD.git -b $GENOA_BRANCH $AMD_PLATFORM_DIR
 
 echo "Clone AMD PSP:"
-git clone ssh://$REPO_URL/amd_firmwares.git -b $GENOA_BRANCH $AMD_FW_DIR
+git clone $REPO_URL/amd_firmwares.git -b $GENOA_BRANCH $AMD_FW_DIR
 
 echo "Clone EDK2:"
 git clone https://github.com/tianocore/edk2 $EDK2_DIR
